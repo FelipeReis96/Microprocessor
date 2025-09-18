@@ -1,4 +1,0 @@
-v 4
-file . "mux_tb.vhd" "c423cb80ac42265ffba9fcafbcca08d4a862ef69" "20250916220630.537":
-  entity mux at 1( 0) + 0 on 13;
-  architecture teste of mux at 14( 325) + 0 on 14;
