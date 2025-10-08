@@ -1,0 +1,12 @@
+Seguem as características sorteadas para o BANCO DE REGISTRADORES do processador da sua equipe. Explicações mais detalhadas sobre os itens se encontram no Moodle, num PDF na seção de Laboratório e Projeto e no lab #3.
+
+Atributos OBRIGATÓRIOS a serem usados na sua validação:
+{'Acumulador ou não': 'ULA com dois acumuladores',
+ 'Número de registradores no banco': [5],
+ 'Carga de constantes': 'Carrega diretamente com LD sem somar',
+ 'ADD ops': 'ADD com dois operandos apenas',
+ 'SUB ops': 'Subtração com dois operandos apenas',
+ 'ADD ctes': 'Há instrução ADDI que soma com constante',
+ 'SUB ctes': 'Há instrução que subtrai uma constante'}
+
+Use MUXes à vontade para implementar isso. Leia o PDF auxiliar ("Descrição dos itens sorteados para o uProcessador (PDF)") e tire dúvidas na aula de Lab, por favor.
