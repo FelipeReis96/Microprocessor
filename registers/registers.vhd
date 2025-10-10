@@ -17,45 +17,77 @@ entity registers is
 end entity;
 
 architecture behavior of registers is 
-    type registers_array is array (0 to 4) of unsigned(15 downto 0);
+   
+    signal reg0_out, reg1_out, reg2_out, reg3_out, reg4_out : unsigned(15 downto 0);
+    
 
-    signal reg_array : registers_array;
+    signal we0, we1, we2, we3, we4 : std_logic;
 begin
 
-    process(clk, reset)
-    begin
-        if reset = '1' then
+    we0 <= '1' when (reg_wr_addr = "000" and wr_en = '1') else '0';
+    we1 <= '1' when (reg_wr_addr = "001" and wr_en = '1') else '0';
+    we2 <= '1' when (reg_wr_addr = "010" and wr_en = '1') else '0';
+    we3 <= '1' when (reg_wr_addr = "011" and wr_en = '1') else '0';
+    we4 <= '1' when (reg_wr_addr = "100" and wr_en = '1') else '0';
 
-            for i in 0 to 4 loop
-                reg_array(i) <= (others => '0');
-            end loop;
-        elsif rising_edge(clk) then
 
-            if wr_en = '1' then
-                case reg_wr_addr is
-                    when "000" => reg_array(0) <= unsigned(wr_data);
-                    when "001" => reg_array(1) <= unsigned(wr_data);
-                    when "010" => reg_array(2) <= unsigned(wr_data);
-                    when "011" => reg_array(3) <= unsigned(wr_data);
-                    when "100" => reg_array(4) <= unsigned(wr_data);
-                    when others => null;
-                end case;
-            end if;
-        end if;
-    end process;
+    reg0 : entity work.reg16bit
+        port map(
+            clk => clk,
+            rst => reset,
+            wr_en => we0,
+            data_in => unsigned(wr_data),
+            data_out => reg0_out
+        );
+        
+    reg1 : entity work.reg16bit
+        port map(
+            clk => clk,
+            rst => reset,
+            wr_en => we1,
+            data_in => unsigned(wr_data),
+            data_out => reg1_out
+        );
+        
+    reg2 : entity work.reg16bit
+        port map(
+            clk => clk,
+            rst => reset,
+            wr_en => we2,
+            data_in => unsigned(wr_data),
+            data_out => reg2_out
+        );
+        
+    reg3 : entity work.reg16bit
+        port map(
+            clk => clk,
+            rst => reset,
+            wr_en => we3,
+            data_in => unsigned(wr_data),
+            data_out => reg3_out
+        );
+        
+    reg4 : entity work.reg16bit
+        port map(
+            clk => clk,
+            rst => reset,
+            wr_en => we4,
+            data_in => unsigned(wr_data),
+            data_out => reg4_out
+        );
 
-    -- Leitura assíncrona dos registradores
-    data_r1 <= std_logic_vector(reg_array(0)) when reg_read_addr1 = "000" else
-               std_logic_vector(reg_array(1)) when reg_read_addr1 = "001" else
-               std_logic_vector(reg_array(2)) when reg_read_addr1 = "010" else
-               std_logic_vector(reg_array(3)) when reg_read_addr1 = "011" else
-               std_logic_vector(reg_array(4)) when reg_read_addr1 = "100" else
+
+    data_r1 <= std_logic_vector(reg0_out) when reg_read_addr1 = "000" else
+               std_logic_vector(reg1_out) when reg_read_addr1 = "001" else
+               std_logic_vector(reg2_out) when reg_read_addr1 = "010" else
+               std_logic_vector(reg3_out) when reg_read_addr1 = "011" else
+               std_logic_vector(reg4_out) when reg_read_addr1 = "100" else
                (others => '0');
 
-    data_r2 <= std_logic_vector(reg_array(0)) when reg_read_addr2 = "000" else
-               std_logic_vector(reg_array(1)) when reg_read_addr2 = "001" else
-               std_logic_vector(reg_array(2)) when reg_read_addr2 = "010" else
-               std_logic_vector(reg_array(3)) when reg_read_addr2 = "011" else
-               std_logic_vector(reg_array(4)) when reg_read_addr2 = "100" else
+    data_r2 <= std_logic_vector(reg0_out) when reg_read_addr2 = "000" else
+               std_logic_vector(reg1_out) when reg_read_addr2 = "001" else
+               std_logic_vector(reg2_out) when reg_read_addr2 = "010" else
+               std_logic_vector(reg3_out) when reg_read_addr2 = "011" else
+               std_logic_vector(reg4_out) when reg_read_addr2 = "100" else
                (others => '0');
 end behavior;
