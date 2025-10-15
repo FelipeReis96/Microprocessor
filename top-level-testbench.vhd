@@ -6,171 +6,101 @@ entity top_level_tb is
 end entity;
 
 architecture testbench of top_level_tb is
+    -- Componente a ser testado
+    component top_level is
+        port (
+            clk : in std_logic;
+            rst : in std_logic;
+            operacao : in std_logic_vector(1 downto 0);
+            ula_operacao : in std_logic_vector(1 downto 0);
+            reg_wr_addr : in unsigned(2 downto 0);
+            reg_rd_addr1 : in unsigned(2 downto 0);
+            reg_rd_addr2 : in unsigned(2 downto 0);
+            constante : in unsigned(15 downto 0);
+            load_const : in std_logic;
+            use_imediato : in std_logic;
+            sel_entrada1 : in std_logic_vector(1 downto 0);
+            sel_entrada2 : in std_logic_vector(1 downto 0);
+            instrucao : out unsigned(18 downto 0);
+            ula_result : out unsigned(15 downto 0);
+            flags : out std_logic_vector(2 downto 0)
+        );
+    end component;
 
-    signal clk : std_logic := '0';
-    signal rst : std_logic := '0';
-    signal operacao : std_logic_vector(1 downto 0) := "00";
-    signal ula_operacao : std_logic_vector(1 downto 0) := "00";
-    signal reg_wr_addr : std_logic_vector(2 downto 0) := "000";
-    signal reg_rd_addr1 : std_logic_vector(2 downto 0) := "000";
-    signal reg_rd_addr2 : std_logic_vector(2 downto 0) := "000";
-    signal wr_data : std_logic_vector(15 downto 0) := (others => '0');
-    signal constante : std_logic_vector(15 downto 0) := (others => '0');
-    signal load_const : std_logic := '0';
-    signal use_imediato : std_logic := '0';
-    signal use_ula_result : std_logic := '0';  -- Sinal para usar resultado da ULA para escrita
-    signal result : std_logic_vector(15 downto 0);
-    signal flags : std_logic_vector(2 downto 0);
+    -- Sinais para conectar ao componente
+    signal clk_sig : std_logic := '0';
+    signal rst_sig : std_logic := '0';
+    signal operacao_sig : std_logic_vector(1 downto 0) := "11"; -- No operation
+    signal ula_operacao_sig : std_logic_vector(1 downto 0) := "00"; -- ADD
+    signal reg_wr_addr_sig : unsigned(2 downto 0) := "000";
+    signal reg_rd_addr1_sig : unsigned(2 downto 0) := "000";
+    signal reg_rd_addr2_sig : unsigned(2 downto 0) := "000";
+    signal constante_sig : unsigned(15 downto 0) := x"0000";
+    signal load_const_sig : std_logic := '0';
+    signal use_imediato_sig : std_logic := '0';
+    signal sel_entrada1_sig : std_logic_vector(1 downto 0) := "00";
+    signal sel_entrada2_sig : std_logic_vector(1 downto 0) := "00";
+    signal instrucao_sig : unsigned(18 downto 0);
+    signal ula_result_sig : unsigned(15 downto 0);
+    signal flags_sig : std_logic_vector(2 downto 0);
 
-    constant clk_period : time := 20 ns;
-    signal clk_stop : boolean := false;
+    -- Constante para período do clock
+    constant clk_period : time := 10 ns;
 
 begin
+    -- Instancia o componente a ser testado
+    uut: top_level port map (
+        clk => clk_sig,
+        rst => rst_sig,
+        operacao => operacao_sig,
+        ula_operacao => ula_operacao_sig,
+        reg_wr_addr => reg_wr_addr_sig,
+        reg_rd_addr1 => reg_rd_addr1_sig,
+        reg_rd_addr2 => reg_rd_addr2_sig,
+        constante => constante_sig,
+        load_const => load_const_sig,
+        use_imediato => use_imediato_sig,
+        sel_entrada1 => sel_entrada1_sig,
+        sel_entrada2 => sel_entrada2_sig,
+        instrucao => instrucao_sig,
+        ula_result => ula_result_sig,
+        flags => flags_sig
+    );
 
-    uut: entity work.top_level
-        port map (
-            clk => clk,
-            rst => rst,
-            operacao => operacao,
-            ula_operacao => ula_operacao,
-            reg_wr_addr => reg_wr_addr,
-            reg_rd_addr1 => reg_rd_addr1,
-            reg_rd_addr2 => reg_rd_addr2,
-            wr_data => wr_data,
-            constante => constante,
-            load_const => load_const,
-            use_imediato => use_imediato,
-            use_ula_result => use_ula_result,
-            ula_result => result,
-            flags => flags
-        );
-
+    -- Processo para geração de clock
     clk_process: process
     begin
-        while not clk_stop loop
-            clk <= not clk;
-            wait for clk_period / 2;
-        end loop;
-        wait;
+        clk_sig <= '0';
+        wait for clk_period/2;
+        clk_sig <= '1';
+        wait for clk_period/2;
     end process;
 
+    -- Processo de estímulo
     stimulus: process
     begin
-    
-        -- Configuração inicial
-        operacao <= "11";
-        ula_operacao <= "00";
-        reg_wr_addr <= "000";
-        wr_data <= x"0000";
-        constante <= x"0000";
-        load_const <= '0';
-        use_imediato <= '0';
-        use_ula_result <= '0';
-        
         -- Reset inicial
-        rst <= '1';
-        wait for clk_period * 4;  
-        rst <= '0';
-        wait for clk_period * 4;  
-
-        -- Teste 1: Escrita normal no registrador 0 (valor 1)
-        reg_wr_addr <= "000";  
-        wr_data <= x"0001";    
-        load_const <= '0';
-        wait for clk_period * 4;  
-    
-        operacao <= "00";
-        wait for clk_period * 4;  
-    
-        operacao <= "11";
-        wait for clk_period * 4;  
-    
-        -- Teste 2: Escrita normal no registrador 1 (valor 2)
-        reg_wr_addr <= "001";  
-        wr_data <= x"0002";    
-        wait for clk_period * 4;  
-    
-        operacao <= "00";
-        wait for clk_period * 4;  
-    
-        operacao <= "11";
-        wait for clk_period * 4;  
-    
-        -- Teste 3: Carga de constante direta (LD) no registrador 2 (valor 5)
-        reg_wr_addr <= "010";
-        constante <= x"0005";
-        load_const <= '1';
-        wait for clk_period * 4;
-    
-        operacao <= "00";
-        wait for clk_period * 4;
-    
-        operacao <= "11";
-        load_const <= '0';
-        wait for clk_period * 4;
-    
-        -- Teste 4: Operação normal ADD (reg0 + reg1 = 1 + 2 = 3)
-        reg_rd_addr1 <= "000";
-        reg_rd_addr2 <= "001";
-        use_imediato <= '0';
-        ula_operacao <= "00";
+        rst_sig <= '1';
         wait for clk_period * 2;
-    
-        operacao <= "01";
-        wait for clk_period * 4;
-    
-        operacao <= "11";
+        
+        -- Desativa o reset e observa a operação da máquina de estados e PC
+        rst_sig <= '0';
+        
+        -- Deixa a máquina de estados executar várias vezes (fetch, execute, fetch, execute...)
+        -- O PC deve incrementar durante os estados de fetch
+        wait for clk_period * 20;
+        
+        -- Aplicar reset novamente para verificar reinicialização
+        rst_sig <= '1';
         wait for clk_period * 2;
-    
-        -- Teste 5: Operação ADDI (reg0 + constante = 1 + 10 = 11)
-        reg_rd_addr1 <= "000";
-        constante <= x"000A";
-        use_imediato <= '1';
-        ula_operacao <= "00";
-        wait for clk_period * 2;
-    
-        operacao <= "10";
-        wait for clk_period * 4;
-    
-        operacao <= "11";
-        wait for clk_period * 2;
-    
-        -- Teste 6: Operação SUBI (reg2 - constante = 5 - 3 = 2)
-        reg_rd_addr1 <= "010";
-        constante <= x"0003";
-        use_imediato <= '1';
-        ula_operacao <= "01";
-        wait for clk_period * 2;
-    
-        operacao <= "01";
-        wait for clk_period * 4;
-    
-        operacao <= "11";
-        wait for clk_period * 2;
-    
-      
-        reg_rd_addr1 <= "001";  
-        reg_rd_addr2 <= "010";  
-        use_imediato <= '0';    -- Usar registradores
-        ula_operacao <= "00";   -- Soma
-        reg_wr_addr <= "011";   -- Resultado vai para reg3
-        use_ula_result <= '1';  -- Usar resultado da ULA para escrita
-        wait for clk_period * 2;
-    
-        operacao <= "00";       -- Modo de escrita (agora escreve resultado da ULA)
-        wait for clk_period * 4;
-    
-        operacao <= "11";      
-        use_ula_result <= '0'; 
-        wait for clk_period * 2;
-    
-        -- Reset final
-        rst <= '1';
-        wait for clk_period * 6; 
-        rst <= '0';
-        wait for clk_period * 6;  
-
-        clk_stop <= true;
+        
+        -- Desativa o reset e observa novamente
+        rst_sig <= '0';
+        
+        -- Continua observando por mais alguns ciclos
+        wait for clk_period * 20;
+        
         wait;
     end process;
+
 end architecture;

@@ -46,35 +46,35 @@ begin
         -- Reset inicial
         rst <= '1';
         wr_en <= '0';
-        data_in <= x"0000";
+        data_in <= x"0001";
         wait for clk_period * 2;
         
         -- Desativa o reset
         rst <= '0';
         wait for clk_period;
         
-        -- Tenta escrever com wr_en desativado (não deve mudar o valor)
+        -- PRIMEIRO configura o dado para x"1234" mantendo wr_en = '0'
         data_in <= x"1234";
         wait for clk_period * 2;
         
-        -- Ativa wr_en e verifica escrita
+        -- DEPOIS ativa wr_en para permitir a escrita
         wr_en <= '1';
-        wait for clk_period * 2;
         
         -- Muda o valor com wr_en ativado
         data_in <= x"ABCD";
         wait for clk_period * 2;
         
-        -- Desativa wr_en novamente
+        -- Primeiro desativa wr_en, DEPOIS muda o valor
         wr_en <= '0';
-        data_in <= x"5678"; -- Não deve ser escrito
+        wait for clk_period;  
+
+        data_in <= x"5678"; 
         wait for clk_period * 2;
         
-
+        -- Reset final
         rst <= '1';
         wait for clk_period * 2;
         
-
         sim_end <= true;
         wait;
     end process;

@@ -24,28 +24,27 @@ begin
             flag3 => flag3
         );
 
-    -- Processo de estímulos
     stimulus: process
     begin
-        -- Teste de adição
+
         entrada1 <= x"0001";
         entrada2 <= x"0002";
         operacao <= "00"; -- Adição
         wait for 10 ns;
 
-        -- Teste de subtração
+  
         entrada1 <= x"0003";
         entrada2 <= x"0001";
         operacao <= "01"; -- Subtração
         wait for 10 ns;
 
-        -- Teste de OR
+    
         entrada1 <= x"000F";
         entrada2 <= x"00F0";
         operacao <= "10"; -- OR
         wait for 10 ns;
 
-        -- Teste de AND
+        
         entrada1 <= x"00FF";
         entrada2 <= x"0F0F";
         operacao <= "11"; -- AND
