@@ -37,22 +37,22 @@ begin
 
     stimulus: process
     begin
-        -- Inicia com reset
+        
         rst_in <= '1';
         wait for clk_period * 2;
         
-        -- Desativa reset e observa alternância de estados
+        
         rst_in <= '0';
         
-        -- Observa 10 ciclos de clock (5 ciclos completos de fetch-execute)
+        
         wait for clk_period * 10;
         
-        -- Testa reset durante execução
+        
         rst_in <= '1';
         wait for clk_period;
         rst_in <= '0';
         
-        -- Observa mais alguns ciclos após o reset
+       
         wait for clk_period * 6;
         
         wait;
