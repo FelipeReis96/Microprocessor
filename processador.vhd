@@ -69,6 +69,8 @@ architecture behavior of processador is
 
     signal instrucao_reg : unsigned(18 downto 0);
 
+    signal addi_const : unsigned(5 downto 0);
+
 begin
     uc_inst : entity work.control_unit
         port map (
@@ -89,17 +91,21 @@ begin
     imediato <= rom_data(7 downto 0);
     constante_sub <= rom_data(5 downto 0);
 
+    addi_const <= rom_data(5 downto 0);
+
     -- Seleção dos acumuladores para entrada da ULA
     ula_entrada1 <= acc_a when bbb = "000" else acc_b;
     ula_entrada2 <= banco_out1 when (opcode = "1000" or opcode = "0101") else
                     ("0000000000" & constante_sub) when opcode = "0100" else
+                    ("0000000000" & addi_const) when opcode = "0011" else
                     (others => '0');
 
     -- Controle de escrita nos acumuladores
     acc_a_wr_en <= '1' when (estado = "10" and (
                         (opcode = "1000" and bbb = "000") or
                         (opcode = "0101" and bbb = "000") or
-                        (opcode = "0100" and bbb = "000")
+                        (opcode = "0100" and bbb = "000") or
+                        (opcode = "0011" and bbb = "000")
                     )) else '0';
 
     acc_b_wr_en <= '1' when (estado = "10" and (
@@ -109,7 +115,7 @@ begin
 
     -- Mux de entrada dos acumuladores
     acc_a_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "000") else
-                ula_out    when (estado = "10" and ((opcode = "0101" or opcode = "0100") and bbb = "000")) else
+                ula_out    when (estado = "10" and ((opcode = "0101" or opcode = "0100" or opcode = "0011") and bbb = "000")) else
                 acc_a;
 
     acc_b_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "001") else
@@ -196,7 +202,7 @@ begin
     instrucao <= instrucao_reg;
 
 
-    ula_operacao_int <= "00" when opcode = "0101" else 
+    ula_operacao_int <= "00" when (opcode = "0101" or opcode = "0011") else 
                         "01" when opcode = "0100" else 
                         "10" when opcode = "0111" else 
                         "11" when opcode = "1001" else 

@@ -16,7 +16,7 @@ architecture a_ROM of ROM is
       0 => "0001010000000000101",  -- LOAD R2, 5 (opcode: 0001, ddd: 010, imediato: 0000101)  CERTO
       1 => "0001011000000001000",  -- LOAD R3, 8 (opcode: 0001, ddd: 011, imedi1ato: 0001000) CERTO
       2 => "1000000010000000000",  -- MOV A, R2 (opcode: 1000, bbb: 000 (A), fff: 010 (R2)) CERTO
-      3 => "0101000011000000000",  -- ADD A, R3 opcode: 0101, fff: 011 (R3), bbb: 000 (A) CERTO
+      3 => "0011000000000001000",  -- ADDI A, 8 opcode: 0011, , bbb: 000 (A) CERTO, cccccc: 001000
       4 => "0010100000000000000",  -- MOV R4, A (opcode: 0010, ddd: 100 (R4), aaa: 000 (A))
       5 => "0000000000000000000",  -- NOP
       6 => "1000000100000000000",  -- MOV A, R4 (opcode: 1000, bbb: 000 (A), fff: 100 (R4))

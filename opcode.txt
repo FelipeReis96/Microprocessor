@@ -1,0 +1,27 @@
+A. Carrega R3 (o registrador 3) com o valor 5
+B. Carrega R4 com 8
+C. Soma R3 com R4 e guarda em R5
+D. Subtrai 1 de R5
+E. Salta para o endereço 20
+F. Zera R5 (nunca será executada)
+G. No endereço 20, copia R5 para R3
+H. Salta para o passo C desta lista (R5 <= R3+R4)
+I. Zera R3 (nunca será executada)
+
+
+A:  0001010000000000101  -- LOAD R2, 5 (opcode: 0001, ddd: 010, const : 0000101)
+B:  0001011000000001000  -- LOAD R3, 8 (opcode: 0001, ddd: 011, const : 0001000)
+C:  1000000010000000000  -- MOV A, R2 (opcode: 1000, bbb: 000 (A), fff: 010 (R2))
+    0101000011000000000  -- ADD A, R3 opcode: 0101, fff: 011 (R3), bbb: 000 (A)    
+    0010100000000000000  -- MOV R4, A (opcode: 0010, ddd: 100 (R4), aaa: 000 (A))
+D:  1000000100000000000  -- MOV A, R4 (opcode: 1000, bbb: 000 (A), fff: 100 (R4)) 
+    0100000000000000001  -- SUBI A, 1 (opcode: 0100, ddd: 100 (R4), cccccc: 000001)  
+    0010100000000000000  -- MOV R4, A (opcode: 0010, ddd: 100 (R4), aaa: 000 (A)) 
+E:  1100000000000010100 -- JUMP 20 (opcode: 1100, eeeeee = 010100) )
+F:  0001100000000000000 -- LOAD R4, 0
+G:  1000000100001000000 -- MOV B, R4    
+    0010010000000000000 -- MOV R2, B     
+H:  1100000000000000010 -- JUMP 2
+I:  0001010000000000000 -- LOAD R2, 0
+
+
