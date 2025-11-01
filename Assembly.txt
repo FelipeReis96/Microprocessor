@@ -12,7 +12,7 @@ I. Zera R3 (nunca será executada)
 A:  LD   R3, 5
 B:  LD   R4, 8
 C:  MOV  A, R3 
-    ADD  A, R4     
+    ADDI  A, 8     
     MOV  R5, A 
 D:  MOV  A, R5    
     SUBI A, 1    

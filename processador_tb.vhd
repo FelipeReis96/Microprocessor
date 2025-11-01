@@ -10,16 +10,6 @@ architecture testbench of processador_tb is
         port (
             clk : in std_logic;
             rst : in std_logic;
-            operacao : in std_logic_vector(1 downto 0);
-            ula_operacao : in std_logic_vector(1 downto 0);
-            reg_wr_addr : in unsigned(2 downto 0);
-            reg_rd_addr1 : in unsigned(2 downto 0);
-            reg_rd_addr2 : in unsigned(2 downto 0);
-            constante : in unsigned(15 downto 0);
-            load_const : in std_logic;
-            use_imediato : in std_logic;
-            sel_entrada1 : in std_logic_vector(1 downto 0);
-            sel_entrada2 : in std_logic_vector(1 downto 0);
             instrucao : out unsigned(18 downto 0);
             ula_result : out unsigned(15 downto 0);
             flags : out std_logic_vector(2 downto 0)
@@ -36,8 +26,6 @@ architecture testbench of processador_tb is
     signal constante : unsigned(15 downto 0) := (others => '0');
     signal load_const : std_logic := '0';
     signal use_imediato : std_logic := '0';
-    signal sel_entrada1 : std_logic_vector(1 downto 0) := "00";
-    signal sel_entrada2 : std_logic_vector(1 downto 0) := "00";
     signal instrucao : unsigned(18 downto 0);
     signal ula_result : unsigned(15 downto 0);
     signal flags : std_logic_vector(2 downto 0);
@@ -49,16 +37,6 @@ begin
     uut: processador port map (
         clk => clk,
         rst => rst,
-        operacao => operacao,
-        ula_operacao => ula_operacao,
-        reg_wr_addr => reg_wr_addr,
-        reg_rd_addr1 => reg_rd_addr1,
-        reg_rd_addr2 => reg_rd_addr2,
-        constante => constante,
-        load_const => load_const,
-        use_imediato => use_imediato,
-        sel_entrada1 => sel_entrada1,
-        sel_entrada2 => sel_entrada2,
         instrucao => instrucao,
         ula_result => ula_result,
         flags => flags
@@ -78,11 +56,9 @@ begin
     stimulus: process
     begin
         rst <= '1';
-        wait for clk_period * 2;
+        wait for clk_period; -- 1 ciclo de clock
         rst <= '0';
-        
-        wait for clk_period * 1000; 
-        stop_sim <= true;
+        -- ...continua a simulação...
         wait;
     end process;
 end architecture;

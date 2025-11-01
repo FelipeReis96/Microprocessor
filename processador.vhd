@@ -6,16 +6,7 @@ entity processador is
     port (
         clk : in std_logic;
         rst : in std_logic;
-        operacao : in std_logic_vector(1 downto 0);
-        ula_operacao : in std_logic_vector(1 downto 0);
-        reg_wr_addr : in unsigned(2 downto 0);
-        reg_rd_addr1 : in unsigned(2 downto 0);
-        reg_rd_addr2 : in unsigned(2 downto 0);
-        constante : in unsigned(15 downto 0);
-        load_const : in std_logic;
-        use_imediato : in std_logic;
-        sel_entrada1 : in std_logic_vector(1 downto 0);
-        sel_entrada2 : in std_logic_vector(1 downto 0);
+    -- sinais removidos: operacao, ula_operacao, reg_wr_addr, reg_rd_addr1, reg_rd_addr2, constante, load_const, use_imediato
         instrucao : out unsigned(18 downto 0);
         ula_result : out unsigned(15 downto 0);
         flags : out std_logic_vector(2 downto 0)
@@ -47,7 +38,6 @@ architecture behavior of processador is
     signal estado : unsigned(1 downto 0);
 
     signal opcode : std_logic_vector(3 downto 0);
-    signal reg_dest, reg_src1, reg_src2 : unsigned(2 downto 0);
     signal constante_rom : unsigned(15 downto 0);
     signal reg_wr_addr_int : unsigned(2 downto 0);
     signal ula_operacao_int : std_logic_vector(1 downto 0);
@@ -136,11 +126,11 @@ begin
                      banco_wr_data;
 
     -- Seleção do endereço de escrita para o banco de registradores
-    reg_wr_addr_int <= ddd when (estado = "10" and (opcode = "0001" or opcode = "0010")) else reg_wr_addr;
+    reg_wr_addr_int <= ddd when (estado = "10" and (opcode = "0001" or opcode = "0010")) else (others => '0');
 
     -- Seleção do endereço de leitura do banco de registradores
-    reg_rd_addr1_int <= fff when (opcode = "1000" or opcode = "0101") else reg_rd_addr1;
-    reg_rd_addr2_int <= reg_rd_addr2;
+    reg_rd_addr1_int <= fff when (opcode = "1000" or opcode = "0101") else (others => '0');
+    reg_rd_addr2_int <= (others => '0');
 
     -- Instância do banco de registradores
     banco : entity work.registers
