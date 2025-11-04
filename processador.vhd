@@ -61,6 +61,10 @@ architecture behavior of processador is
 
     signal addi_const : unsigned(5 downto 0);
 
+    signal flag_carry : std_logic;
+    signal flag_zero : std_logic;
+    signal flag_negativo : std_logic;
+
 begin
     uc_inst : entity work.control_unit
         port map (
@@ -153,9 +157,9 @@ begin
             entrada2 => ula_entrada2,
             operacao => ula_operacao_int,
             saida    => ula_out,
-            flag1    => flag1,
-            flag2    => flag2,
-            flag3    => flag3
+            carry    => flag_carry,
+            zero     => flag_zero,
+            negativo => flag_negativo
         );
 
 
@@ -199,7 +203,7 @@ begin
                         "00";
 
     ula_result <= ula_out;
-    flags      <= flag1 & flag2 & flag3;
+    flags      <= flag_carry & flag_zero & flag_negativo;
     instrucao  <= rom_data;
 
 
