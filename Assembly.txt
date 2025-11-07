@@ -1,35 +1,21 @@
-A. Carrega R3 (o registrador 3) com o valor 5
-B. Carrega R4 com 8
-C. Soma R3 com R4 e guarda em R5
-D. Subtrai 1 de R5
-E. Salta para o endereço 20
-F. Zera R5 (nunca será executada)
-G. No endereço 20, copia R5 para R3
-H. Salta para o passo C desta lista (R5 <= R3+R4)
-I. Zera R3 (nunca será executada)
+A. Carrega R3 (o registrador 3) com o valor 0
+B. Carrega R4 com 0
+C. Soma R3 com R4 e guarda em R4
+D. Soma 1 em R3
+E. Se R3<30 salta para a instrução do passo C *
+F. Copia valor de R4 para R5
 
 
-A:  LD   R3, 5
-B:  LD   R4, 8
-C:  MOV  A, R3 
-    ADDI  A, 8     
-    MOV  R5, A 
-D:  MOV  A, R5    
-    SUBI A, 1    
-    MOV  R5, A   
-E:  JMP  20
-F:  LD   R5, 0
-NOP
-NOP
-NOP
-NOP
-NOP
-NOP
-NOP
-NOP
-G:  MOV  A, R5     
-    MOV  R3, A     
-H:  JMP  2
-I:  LD   R3, 0
-
-
+A:  LD  R3,0 
+B:  LD  R4,0 
+C:  MOV A, R3
+    ADD A, R4    
+    MOV R4, A 
+D:  MOV A, R3   
+    ADDI A, 1    
+    MOV R3, A   
+E:  MOV A, R3
+    CMPI A,30
+    BHI -9
+F:  MOV A, R4
+    MOV R5, A

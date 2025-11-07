@@ -6,7 +6,6 @@ entity processador is
     port (
         clk : in std_logic;
         rst : in std_logic;
-    -- sinais removidos: operacao, ula_operacao, reg_wr_addr, reg_rd_addr1, reg_rd_addr2, constante, load_const, use_imediato
         instrucao : out unsigned(18 downto 0);
         ula_result : out unsigned(15 downto 0);
         flags : out std_logic_vector(2 downto 0)
@@ -49,12 +48,11 @@ architecture behavior of processador is
 
     signal jump_addr : unsigned(6 downto 0);
 
-    -- Campos da instrução
     signal ddd : unsigned(2 downto 0);
     signal aaa : unsigned(2 downto 0);
     signal bbb : unsigned(2 downto 0);
     signal fff : unsigned(2 downto 0);
-    signal imediato : unsigned(7 downto 0); -- 8 bits
+    signal imediato : unsigned(7 downto 0); 
     signal constante_sub : unsigned(5 downto 0);
 
     signal instrucao_reg : unsigned(18 downto 0);
@@ -65,11 +63,28 @@ architecture behavior of processador is
     signal flag_zero : std_logic;
     signal flag_negativo : std_logic;
 
+    -- Sinal para ser guardado em um registrador PSW
+    signal flags_wr_en       : std_logic;
+    signal psw_in_vec  : std_logic_vector(15 downto 0);
+    signal psw_out     : unsigned(15 downto 0);
+    signal flag_carry_l      : std_logic;
+    signal flag_zero_l       : std_logic;
+    signal flag_negativo_l   : std_logic;
+
+   
+    signal bhi_cond           : std_logic;              
+    signal branch_offset6     : signed(5 downto 0);     -- eeeeee (signed)
+    signal branch_offset7     : signed(6 downto 0);
+    signal pc_plus1           : unsigned(6 downto 0);
+    signal branch_target_rel  : unsigned(6 downto 0);   
+
 begin
     uc_inst : entity work.control_unit
         port map (
             clk         => clk,
             rst         => rst,
+            carry_in    => flag_carry_l,
+            zero_in     => flag_zero_l,
             data_out_pc => pc_out,      
             dado_rom    => rom_data,
             estado_out  => estado
@@ -87,10 +102,17 @@ begin
 
     addi_const <= rom_data(5 downto 0);
 
+    pc_plus1       <= pc_out + 1;
+    branch_offset6 <= signed(rom_data(5 downto 0));
+    branch_offset7 <= resize(branch_offset6, 7);
+    -- Condição BHI desejada: após CMPI (A - X), se X > A ->  (carry=1) e não igual (zero=0)
+    bhi_cond       <= '1' when (estado = "10" and opcode = "1110" and flag_zero = '0' and flag_carry = '1') else '0';
+    branch_target_rel <= unsigned(signed(pc_plus1) + branch_offset7);
+
     -- Seleção dos acumuladores para entrada da ULA
     ula_entrada1 <= acc_a when bbb = "000" else acc_b;
     ula_entrada2 <= banco_out1 when (opcode = "1000" or opcode = "0101") else
-                    ("0000000000" & constante_sub) when opcode = "0100" else
+                    ("0000000000" & constante_sub) when (opcode = "0100" or opcode = "1010") else
                     ("0000000000" & addi_const) when opcode = "0011" else
                     (others => '0');
 
@@ -136,7 +158,6 @@ begin
     reg_rd_addr1_int <= fff when (opcode = "1000" or opcode = "0101") else (others => '0');
     reg_rd_addr2_int <= (others => '0');
 
-    -- Instância do banco de registradores
     banco : entity work.registers
         port map (
             clk      => clk,
@@ -197,13 +218,38 @@ begin
 
 
     ula_operacao_int <= "00" when (opcode = "0101" or opcode = "0011") else 
-                        "01" when opcode = "0100" else 
+                        "01" when (opcode = "0100" or opcode = "1010") else 
                         "10" when opcode = "0111" else 
                         "11" when opcode = "1001" else 
                         "00";
 
     ula_result <= ula_out;
-    flags      <= flag_carry & flag_zero & flag_negativo;
+    
+    flags_wr_en <= '1' when (estado = "10" and 
+                             (opcode = "0101" or -- ADD A,R
+                              opcode = "0011" or -- ADDI A,const
+                              opcode = "0100" or -- SUBI A,const
+                              opcode = "1010" or -- CMPI A,const
+                              opcode = "0111" or -- OR
+                              opcode = "1001"))  -- AND
+                   else '0';
+    psw_in_vec <= (15 downto 3 => '0') & flag_carry & flag_zero & flag_negativo; -- [2]=C, [1]=Z, [0]=N
+
+    psw : entity work.reg16bit
+        port map(
+            clk      => clk,
+            rst      => rst,
+            wr_en    => flags_wr_en,
+            data_in  => unsigned(psw_in_vec),
+            data_out => psw_out
+        );
+
+    flag_carry_l    <= psw_out(2);
+    flag_zero_l     <= psw_out(1);
+    flag_negativo_l <= psw_out(0);
+
+ 
+    flags      <= flag_carry_l & flag_zero_l & flag_negativo_l;
     instrucao  <= rom_data;
 
 
