@@ -59,7 +59,7 @@ architecture behavior of processador is
 
     signal addi_const : unsigned(5 downto 0);
 
-    -- Sinais RAM
+
     signal ram_addr  : unsigned(6 downto 0);
     signal ram_wr_en : std_logic;
     signal ram_din   : unsigned(15 downto 0);

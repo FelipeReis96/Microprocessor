@@ -1,21 +1,57 @@
-A. Carrega R3 (o registrador 3) com o valor 0
-B. Carrega R4 com 0
-C. Soma R3 com R4 e guarda em R4
-D. Soma 1 em R3
-E. Se R3<30 salta para a instrução do passo C *
-F. Copia valor de R4 para R5
+0: Carrega R2 com 5.
+1: Carrega R0 com 37.
+2: Armazena na RAM, no endereço em R2, o conteúdo de R0 (RAM[5] = 37).
+3: Carrega R4 com 58.
+4: Carrega R1 com 42.
+5: Armazena na RAM, no endereço em R4, o conteúdo de R1 (RAM[58] = 42).
+6: Carrega R3 com 23.
+7: Carrega R0 com 55.
+8: Armazena na RAM, no endereço em R3, o conteúdo de R0 (RAM[23] = 55).
+9: Não faz nada (NOP).
+10: Carrega R0 com 63.
+11: Carrega R1 com 0.
+12: Carrega R2 com 0.
+13: Carrega R3 com 0.
+14: Carrega R4 com 0.
+15: Carrega R2 com 58.
+16: Não faz nada (NOP).
+17: Carrega R3 com a palavra lida da RAM no endereço em R2 (R3 = RAM[58] = 42).
+18: Carrega R4 com 23.
+19: Não faz nada (NOP).
+20: Carrega R1 com a palavra lida da RAM no endereço em R4 (R1 = RAM[23] = 55).
+21: Carrega R2 com 5.
+22: Não faz nada (NOP).
+23: Carrega R4 com a palavra lida da RAM no endereço em R2 (R4 = RAM[5] = 37).
 
 
-A:  LD  R3,0 
-B:  LD  R4,0 
-C:  MOV A, R3
-    ADD A, R4    
-    MOV R4, A 
-D:  MOV A, R3   
-    ADDI A, 1    
-    MOV R3, A   
-E:  MOV A, R3
-    CMPI A,30
-    BHI -9
-F:  MOV A, R4
-    MOV R5, A
+0:  LOAD R2, 5
+1:  LOAD R0, 37
+2:  SW   R2, R0        ; RAM[R2]=R0  -> RAM[5]=37
+
+3:  LOAD R4, 58
+4:  LOAD R1, 42
+5:  SW   R4, R1        ; RAM[58]=42
+
+6:  LOAD R3, 23
+7:  LOAD R0, 55
+8:  SW   R3, R0        ; RAM[23]=55
+
+9:  NOP
+
+10: LOAD R0, 63
+11: LOAD R1, 0
+12: LOAD R2, 0
+13: LOAD R3, 0
+14: LOAD R4, 0
+
+15: LOAD R2, 58
+16: NOP
+17: LW   R3, R2        ; R3 = RAM[58] (=42)
+
+18: LOAD R4, 23
+19: NOP
+20: LW   R1, R4        ; R1 = RAM[23] (=55)
+
+21: LOAD R2, 5
+22: NOP
+23: LW   R4, R2        ; R4 = RAM[5]  (=37)
