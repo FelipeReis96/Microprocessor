@@ -9,34 +9,50 @@ entity ROM is
    );
 end entity;
 
-
 architecture a_ROM of ROM is
    type mem is array (0 to 127) of unsigned(18 downto 0); 
    constant conteudo_rom : mem := (
+         -- Escritas (dados/endereços embaralhados)
+         0  => "0001010000000000101",  -- LOAD R2, 5      ; ponteiro #1
+         1  => "0001000000000100101",  -- LOAD R0, 37     ; dado #1
+         2  => "0110010000000000000",  -- SW R2, R0       ; RAM[5]  = 37
 
-         0 => "0001010000000000000",  -- LOAD R3,0  
-         -- B. Carrega R4 com 0
-         1 => "0001011000000000000",  -- LOAD R4,0  
-         -- C. Soma R3 com R4 e guarda em R4  (R4 = R3 + R4)
-         2 => "1000000010000000000",  -- MOV A, R3  (bbb=000(A), fff=010(R3))
-         3 => "0101000011000000000",  -- ADD A, R4  (bbb=000(A), fff=011(R4))
-         4 => "0010011000000000000",  -- MOV R4, A  (ddd=011(R4), aaa=000(A))
-         -- D. Soma 1 em R3  (R3 = R3 + 1)
-         5 => "1000000010000000000",  -- MOV A, R3  (bbb=000(A), fff=010(R3))
-         6 => "0011000000000000001",  -- ADDI A, 1  (bbb=000(A), const=000001)
-         7 => "0010010000000000000",  -- MOV R3, A  (ddd=010(R3), aaa=000(A))
-         -- Comparação e loop: Se R3 < 30 volta para passo C (endereço 2)
-         8  => "1000000010000000000",  -- MOV A, R3 (prepara para comparar) 
-         9  => "1010000000000011110",  -- CMPI A,30 (opcode 1010, bbb=000(A), const=011110) 
-      10 => "1110000000000110111",  -- BHI -9 (opcode 1110, offset=110111 -> -9) 
-      11 => "1000000011000000000",  -- MOV A, R4 (bbb=000 A, fff=011 R4)
-      12 => "0010100000000000000",  -- MOV R5, A (ddd=100 R5, aaa=000 A)
-      others => (others=>'0')
+         3  => "0001100000000111010",  -- LOAD R4, 58     ; ponteiro #2
+         4  => "0001001000000101010",  -- LOAD R1, 42     ; dado #2
+         5  => "0110100000001000000",  -- SW R4, R1       ; RAM[58] = 42
+
+         6  => "0001011000000010111",  -- LOAD R3, 23     ; ponteiro #3
+         7  => "0001000000000110111",  -- LOAD R0, 55     ; dado #3
+         8  => "0110011000000000000",  -- SW R3, R0       ; RAM[23] = 55
+
+         9  => "0000000000000000000",  -- NOP
+
+         -- Contamina registros (evitar “falso ok”)
+         10 => "0001000000000111111",  -- LOAD R0, 63
+         11 => "0001001000000000000",  -- LOAD R1, 0
+         12 => "0001010000000000000",  -- LOAD R2, 0
+         13 => "0001011000000000000",  -- LOAD R3, 0
+         14 => "0001100000000000000",  -- LOAD R4, 0
+
+         -- Leituras, com distância temporal e regs diferentes
+         15 => "0001010000000111010",  -- LOAD R2, 58     ; ponteiro p/ RAM[58]
+         16 => "0000000000000000000",  -- NOP
+         17 => "1011011000010000000",  -- LW R3, R2       ; R3 = RAM[58] = 42
+
+         18 => "0001100000000010111",  -- LOAD R4, 23     ; ponteiro p/ RAM[23]
+         19 => "0000000000000000000",  -- NOP
+         20 => "1011001000100000000",  -- LW R1, R4       ; R1 = RAM[23] = 55
+
+         21 => "0001010000000000101",  -- LOAD R2, 5      ; ponteiro p/ RAM[5]
+         22 => "0000000000000000000",  -- NOP
+         23 => "1011100000010000000",  -- LW R4, R2       ; R4 = RAM[5]  = 37
+
+         others => (others => '0')
    );
 begin
    process(clk)
    begin
-      if(rising_edge(clk)) then
+      if rising_edge(clk) then
          dado <= conteudo_rom(to_integer(endereco));
       end if;
    end process;

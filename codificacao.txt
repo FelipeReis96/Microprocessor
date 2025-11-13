@@ -9,6 +9,8 @@ JUMP : 1100 xxx xxx xxx eeeeee
 CMPI : 1010 xxx xxx bbb cccccc
 BHI : 1110 xxx xxx xxx eeeeee
 BHS : 1111 xxx xxx xxx eeeeee
+LW  : 1011 ddd xxx fff xxxxxx
+SW  : 0110 fff xxx sss xxxxxx
 
 
 onde 

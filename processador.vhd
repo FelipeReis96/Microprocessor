@@ -59,6 +59,13 @@ architecture behavior of processador is
 
     signal addi_const : unsigned(5 downto 0);
 
+    -- Sinais RAM
+    signal ram_addr  : unsigned(6 downto 0);
+    signal ram_wr_en : std_logic;
+    signal ram_din   : unsigned(15 downto 0);
+    signal ram_dout  : unsigned(15 downto 0);
+    signal sss       : unsigned(2 downto 0);  -- registrador fonte p/ SW
+
     signal flag_carry : std_logic;
     signal flag_zero : std_logic;
     signal flag_negativo : std_logic;
@@ -91,19 +98,28 @@ begin
         );
 
     -- Decodificação dos campos da instrução
-    opcode    <= std_logic_vector(rom_data(18 downto 15)); 
-    jump_addr <= ("0" & rom_data(5 downto 0));                  
-    ddd      <= rom_data(14 downto 12);
-    fff      <= rom_data(11 downto 9);
-    bbb      <= rom_data(8 downto 6); -- acumulador destino (MOV A, R e ADD A, R)
-    aaa      <= rom_data(8 downto 6); -- acumulador fonte (MOV R, A)
-    imediato <= rom_data(7 downto 0);
-    constante_sub <= rom_data(5 downto 0);
+    opcode    <= std_logic_vector(instrucao_reg(18 downto 15)); 
+    jump_addr <= ("0" & instrucao_reg(5 downto 0));                  
+    ddd       <= instrucao_reg(14 downto 12);           -- destino (LOAD/LW)
+    bbb       <= instrucao_reg(8 downto 6);             -- acumulador
+    aaa       <= instrucao_reg(8 downto 6);             -- acumulador
+    sss       <= instrucao_reg(8 downto 6);             -- SW: fonte (sss)
 
-    addi_const <= rom_data(5 downto 0);
+    -- fff depende do opcode (conforme especificação):
+    -- SW: 0110 fff xxx sss xxxxxx  -> fff = 14..12
+    -- LW: 1011 ddd xxx fff xxxxxx  -> fff = 8..6
+    -- Demais (ex.: MOV A,R, ADD A,R): fff = 11..9
+    with opcode select
+        fff <= instrucao_reg(14 downto 12) when "0110",  -- SW: ponteiro
+               instrucao_reg(8  downto 6 ) when "1011",  -- LW: ponteiro
+               instrucao_reg(11 downto 9 ) when others;  -- MOV A,R / ADD A,R
+
+    imediato      <= instrucao_reg(7 downto 0);
+    constante_sub <= instrucao_reg(5 downto 0);
+    addi_const    <= instrucao_reg(5 downto 0);
 
     pc_plus1       <= pc_out + 1;
-    branch_offset6 <= signed(rom_data(5 downto 0));
+    branch_offset6 <= signed(instrucao_reg(5 downto 0));
     branch_offset7 <= resize(branch_offset6, 7);
     -- Condição BHI desejada: após CMPI (A - X), se X > A ->  (carry=1) e não igual (zero=0)
     bhi_cond       <= '1' when (estado = "10" and opcode = "1110" and flag_zero = '0' and flag_carry = '1') else '0';
@@ -141,22 +157,26 @@ begin
     -- Controle de escrita no banco de registradores
     wr_en <= '1' when (estado = "10" and opcode = "0001") else -- LOAD
              '1' when (estado = "10" and opcode = "0010") else -- MOV R, A
+             '1' when (estado = "10" and opcode = "1011") else -- LW
              '0';
-
-    
 
     -- Seleção do dado de escrita para o banco de registradores
     banco_wr_data <= ("00000000" & imediato) when (estado = "10" and opcode = "0001") else -- LOAD
-                     acc_a when (estado = "10" and opcode = "0010" and aaa = "000") else -- MOV R, A
-                     acc_b when (estado = "10" and opcode = "0010" and aaa = "001") else -- MOV R, B
-                     banco_wr_data;
+                     acc_a       when (estado = "10" and opcode = "0010" and aaa = "000") else -- MOV R, A
+                     acc_b       when (estado = "10" and opcode = "0010" and aaa = "001") else -- MOV R, B
+                     ram_dout    when (estado = "10" and opcode = "1011") else -- LW
+                     (others => '0');
 
     -- Seleção do endereço de escrita para o banco de registradores
-    reg_wr_addr_int <= ddd when (estado = "10" and (opcode = "0001" or opcode = "0010")) else (others => '0');
+    reg_wr_addr_int <= ddd when (estado = "10" and (opcode = "0001" or opcode = "0010" or opcode = "1011")) else 
+                       (others => '0');
 
     -- Seleção do endereço de leitura do banco de registradores
-    reg_rd_addr1_int <= fff when (opcode = "1000" or opcode = "0101") else (others => '0');
-    reg_rd_addr2_int <= (others => '0');
+    reg_rd_addr1_int <= fff when (opcode = "1000" or opcode = "0101" or 
+                                   opcode = "1011" or opcode = "0110") else  -- +LW/SW (ponteiro)
+                        (others => '0');
+    reg_rd_addr2_int <= sss when (opcode = "0110") else  -- SW: fonte do dado
+                        (others => '0');
 
     banco : entity work.registers
         port map (
@@ -201,8 +221,6 @@ begin
             data_in  => acc_b_in,
             data_out => acc_b
         );
-
-    -- Controle de escrita do registrador de instruções
     wr_en_instrucao <= '1' when estado = "10" else '0';
 
     reg_instrucao : entity work.reg19bit
@@ -250,7 +268,21 @@ begin
 
  
     flags      <= flag_carry_l & flag_zero_l & flag_negativo_l;
-    instrucao  <= rom_data;
+
+
+    -- RAM: endereço vem do registrador ponteiro; dado para SW da porta 2
+    ram_addr  <= banco_out1(6 downto 0);
+    ram_din   <= banco_out2;
+    ram_wr_en <= '1' when (estado = "10" and opcode = "0110") else '0';
+
+    ram_inst : entity work.ram
+        port map (
+            clk      => clk,
+            endereco => ram_addr,
+            wr_en    => ram_wr_en,
+            dado_in  => ram_din,
+            dado_out => ram_dout
+        );
 
 
 end architecture;
