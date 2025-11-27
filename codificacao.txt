@@ -6,11 +6,12 @@ MOV R,A : 0010 ddd xxx aaa xxxxxx
 MOV A,R : 1000 xxx fff bbb xxxxxx
 ADD A,R: 0101 xxx fff bbb xxxxxx
 JUMP : 1100 xxx xxx xxx eeeeee
-CMPI : 1010 xxx xxx bbb cccccc
-BHI : 1110 xxx xxx xxx eeeeee
+CMPI : 1010 xxx xxg ggc cccccc 
+BHI : 1110 xxx xxx xxx eeeeee 
 BHS : 1111 xxx xxx xxx eeeeee
 LW  : 1011 ddd xxx fff xxxxxx
 SW  : 0110 fff xxx sss xxxxxx
+INC : 1111 xxx xxx jjj xxxxxx
 
 
 onde 
@@ -21,3 +22,4 @@ onde
 	bbb é o acumulador destino ou o acumulador a ser comparado
 	fff é o registrador fonte
 	eeeeee é o endereço
+	sss

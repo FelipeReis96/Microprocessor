@@ -8,7 +8,8 @@ entity processador is
         rst : in std_logic;
         instrucao : out unsigned(18 downto 0);
         ula_result : out unsigned(15 downto 0);
-        flags : out std_logic_vector(2 downto 0)
+        flags : out std_logic_vector(2 downto 0);
+        primos_out : out unsigned(15 downto 0)
     );
 end entity;
 
@@ -52,8 +53,9 @@ architecture behavior of processador is
     signal aaa : unsigned(2 downto 0);
     signal bbb : unsigned(2 downto 0);
     signal fff : unsigned(2 downto 0);
+    signal ggg : unsigned(2 downto 0);
     signal imediato : unsigned(7 downto 0); 
-    signal constante_sub : unsigned(5 downto 0);
+    signal constante_sub : unsigned(6 downto 0);
 
     signal instrucao_reg : unsigned(18 downto 0);
 
@@ -85,6 +87,9 @@ architecture behavior of processador is
     signal pc_plus1           : unsigned(6 downto 0);
     signal branch_target_rel  : unsigned(6 downto 0);   
 
+    signal jjj : unsigned(2 downto 0);
+    signal primos_out_int : unsigned(15 downto 0);
+
 begin
     uc_inst : entity work.control_unit
         port map (
@@ -97,38 +102,38 @@ begin
             estado_out  => estado
         );
 
-    -- Decodificação dos campos da instrução
-    opcode    <= std_logic_vector(instrucao_reg(18 downto 15)); 
-    jump_addr <= ("0" & instrucao_reg(5 downto 0));                  
-    ddd       <= instrucao_reg(14 downto 12);           -- destino (LOAD/LW)
-    bbb       <= instrucao_reg(8 downto 6);             -- acumulador
-    aaa       <= instrucao_reg(8 downto 6);             -- acumulador
-    sss       <= instrucao_reg(8 downto 6);             -- SW: fonte (sss)
-
-    -- fff depende do opcode (conforme especificação):
-    -- SW: 0110 fff xxx sss xxxxxx  -> fff = 14..12
-    -- LW: 1011 ddd xxx fff xxxxxx  -> fff = 8..6
-    -- Demais (ex.: MOV A,R, ADD A,R): fff = 11..9
-    with opcode select
-        fff <= instrucao_reg(14 downto 12) when "0110",  -- SW: ponteiro
-               instrucao_reg(8  downto 6 ) when "1011",  -- LW: ponteiro
-               instrucao_reg(11 downto 9 ) when others;  -- MOV A,R / ADD A,R
-
-    imediato      <= instrucao_reg(7 downto 0);
-    constante_sub <= instrucao_reg(5 downto 0);
-    addi_const    <= instrucao_reg(5 downto 0);
+    -- Decodificação dos campos da instrução (usa rom_data, não instrucao_reg)
+    opcode    <= std_logic_vector(rom_data(18 downto 15)); 
+    ddd       <= rom_data(14 downto 12);
+    bbb       <= rom_data(8 downto 6);
+    aaa       <= rom_data(8 downto 6);
+    ggg <= rom_data(9 downto 7) when opcode = "1010" else (others => '0');
+    
+    -- fff depende do opcode (usa rom_data direto)
+    fff <= rom_data(14 downto 12) when (opcode = "0110") else
+          rom_data(8  downto 6 ) when (opcode = "1011") else
+          rom_data(11 downto 9 );
+    
+    sss <= rom_data(8 downto 6) when (opcode = "0110") else (others => '0');
+    jjj <= rom_data(8 downto 6) when opcode = "1111" else (others => '0');
+    
+    imediato      <= rom_data(7 downto 0);
+    constante_sub <= rom_data(6 downto 0);
+    addi_const    <= rom_data(5 downto 0);
 
     pc_plus1       <= pc_out + 1;
-    branch_offset6 <= signed(instrucao_reg(5 downto 0));
+    branch_offset6 <= signed(rom_data(5 downto 0));
     branch_offset7 <= resize(branch_offset6, 7);
     -- Condição BHI desejada: após CMPI (A - X), se X > A ->  (carry=1) e não igual (zero=0)
     bhi_cond       <= '1' when (estado = "10" and opcode = "1110" and flag_zero = '0' and flag_carry = '1') else '0';
     branch_target_rel <= unsigned(signed(pc_plus1) + branch_offset7);
 
     -- Seleção dos acumuladores para entrada da ULA
-    ula_entrada1 <= acc_a when bbb = "000" else acc_b;
+    ula_entrada1 <= acc_a when ((opcode /= "1010" and bbb = "000") or (opcode = "1010" and ggg = "000")) else
+                acc_b when ((opcode /= "1010" and bbb = "001") or (opcode = "1010" and ggg = "001")) else
+                (others => '0');
     ula_entrada2 <= banco_out1 when (opcode = "1000" or opcode = "0101") else
-                    ("0000000000" & constante_sub) when (opcode = "0100" or opcode = "1010") else
+                    ("000000000" & constante_sub) when (opcode = "0100" or opcode = "1010") else
                     ("0000000000" & addi_const) when opcode = "0011" else
                     (others => '0');
 
@@ -137,20 +142,24 @@ begin
                         (opcode = "1000" and bbb = "000") or
                         (opcode = "0101" and bbb = "000") or
                         (opcode = "0100" and bbb = "000") or
-                        (opcode = "0011" and bbb = "000")
+                        (opcode = "0011" and bbb = "000") or
+                        (opcode = "1111" and jjj = "000")
                     )) else '0';
 
     acc_b_wr_en <= '1' when (estado = "10" and (
                         (opcode = "1000" and bbb = "001") or
-                        (opcode = "0101" and bbb = "001")
+                        (opcode = "0101" and bbb = "001") or
+                        (opcode = "1011")  -- grava em B no LW
                     )) else '0';
 
     -- Mux de entrada dos acumuladores
     acc_a_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "000") else
-                ula_out    when (estado = "10" and ((opcode = "0101" or opcode = "0100" or opcode = "0011") and bbb = "000")) else
+                ula_out    when (estado = "10" and bbb = "000" and (opcode = "0101" or opcode = "0100" or opcode = "0011")) else
+                acc_a + 1 when (estado = "10" and opcode = "1111" and jjj = "000") else
                 acc_a;
 
-    acc_b_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "001") else
+    acc_b_in <= ram_dout when (estado = "10" and opcode = "1011") else
+                banco_out1 when (estado = "10" and opcode = "1000" and bbb = "001") else
                 ula_out    when (estado = "10" and opcode = "0101" and bbb = "001") else
                 acc_b;
 
@@ -158,6 +167,7 @@ begin
     wr_en <= '1' when (estado = "10" and opcode = "0001") else -- LOAD
              '1' when (estado = "10" and opcode = "0010") else -- MOV R, A
              '1' when (estado = "10" and opcode = "1011") else -- LW
+             '1' when (estado = "10" and opcode = "1111") else -- INC
              '0';
 
     -- Seleção do dado de escrita para o banco de registradores
@@ -169,13 +179,14 @@ begin
 
     -- Seleção do endereço de escrita para o banco de registradores
     reg_wr_addr_int <= ddd when (estado = "10" and (opcode = "0001" or opcode = "0010" or opcode = "1011")) else 
+                       jjj when (estado = "10" and opcode = "1111") else
                        (others => '0');
 
     -- Seleção do endereço de leitura do banco de registradores
     reg_rd_addr1_int <= fff when (opcode = "1000" or opcode = "0101" or 
                                    opcode = "1011" or opcode = "0110") else  -- +LW/SW (ponteiro)
                         (others => '0');
-    reg_rd_addr2_int <= sss when (opcode = "0110") else  -- SW: fonte do dado
+    reg_rd_addr2_int <= sss when (opcode = "0110") else
                         (others => '0');
 
     banco : entity work.registers
@@ -221,7 +232,7 @@ begin
             data_in  => acc_b_in,
             data_out => acc_b
         );
-    wr_en_instrucao <= '1' when estado = "10" else '0';
+    wr_en_instrucao <= '1' when estado = "01" else '0';
 
     reg_instrucao : entity work.reg19bit
     port map (
@@ -235,11 +246,14 @@ begin
     instrucao <= instrucao_reg;
 
 
+    -- Decodificação de sss (fonte do dado para SW, usa rom_data direto)
+    sss <= rom_data(8 downto 6) when (opcode = "0110") else (others => '0');
+
     ula_operacao_int <= "00" when (opcode = "0101" or opcode = "0011") else 
-                        "01" when (opcode = "0100" or opcode = "1010") else 
-                        "10" when opcode = "0111" else 
-                        "11" when opcode = "1001" else 
-                        "00";
+                    "01" when (opcode = "0100" or opcode = "1010") else 
+                    "10" when opcode = "0111" else 
+                    "11" when opcode = "1001" else 
+                    "00";
 
     ula_result <= ula_out;
     
@@ -283,6 +297,9 @@ begin
             dado_in  => ram_din,
             dado_out => ram_dout
         );
+    
+    -- guarda o valor lido da RAM para saída de primos
+    primos_out_int <= ram_dout when (estado = "10" and opcode = "1011") else (others => '0');
 
 
 end architecture;

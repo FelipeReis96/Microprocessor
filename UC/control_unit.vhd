@@ -75,7 +75,7 @@ begin
     
     offset6_s   <= signed(instrucao_s(5 downto 0));
     offset7_s   <= resize(offset6_s, 7);
-    pc_rel_s    <= unsigned(signed(pc_next_s) + offset7_s);
+    pc_rel_s    <= unsigned(signed(pc_out_s) + offset7_s);
 
     -- 1100: salto absoluto incondicional (JUMP)
     jump_en     <= '1' when opcode_s = "1100" and estado_s = "10" else '0';
@@ -84,8 +84,10 @@ begin
     -- 1111: BHS relativo (X >= A após CMPI A,X): zero=1 (igual) ou carry=1 (borrow -> X > A)
     jump_rel_en_bhs <= '1' when opcode_s = "1111" and estado_s = "10" and (zero_in = '1' or carry_in = '1') else '0';
 
-    entrada_do_pc <= pc_rel_s        when (jump_rel_en = '1' or jump_rel_en_bhs = '1') else
-                     endereco_jump_s when jump_en     = '1' else
+    -- 1100: salto relativo (JUMP) - mesma lógica de BHI/BHS
+    jump_en     <= '1' when opcode_s = "1100" and estado_s = "10" else '0';
+
+    entrada_do_pc <= pc_rel_s        when (jump_rel_en = '1' or jump_rel_en_bhs = '1' or jump_en = '1') else
                      pc_next_s;
 
 end architecture;

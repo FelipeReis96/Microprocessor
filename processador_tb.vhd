@@ -12,7 +12,8 @@ architecture testbench of processador_tb is
             rst : in std_logic;
             instrucao : out unsigned(18 downto 0);
             ula_result : out unsigned(15 downto 0);
-            flags : out std_logic_vector(2 downto 0)
+            flags : out std_logic_vector(2 downto 0);
+            primos_out : out unsigned(15 downto 0)
         );
     end component;
 
@@ -29,9 +30,13 @@ architecture testbench of processador_tb is
     signal instrucao : unsigned(18 downto 0);
     signal ula_result : unsigned(15 downto 0);
     signal flags : std_logic_vector(2 downto 0);
+    signal flag_carry    : std_logic;
+    signal flag_zero     : std_logic;
+    signal flag_negativo : std_logic;
 
     constant clk_period : time := 10 ns;
     signal stop_sim : boolean := false;
+    signal primos_out_int : unsigned(15 downto 0);
 
 begin
     uut: processador port map (
@@ -39,8 +44,14 @@ begin
         rst => rst,
         instrucao => instrucao,
         ula_result => ula_result,
-        flags => flags
+        flags => flags,
+        primos_out => primos_out_int
     );
+
+    -- Separar flags individuais
+    flag_carry    <= flags(2);
+    flag_zero     <= flags(1);
+    flag_negativo <= flags(0);
 
     clk_process: process
     begin
