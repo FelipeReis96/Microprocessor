@@ -22,4 +22,6 @@ onde
 	bbb é o acumulador destino ou o acumulador a ser comparado
 	fff é o registrador fonte
 	eeeeee é o endereço
-	sss
+	sss é o registrador fonte para operações RAM
+	jjj é o acumulador a ser incrementado
+

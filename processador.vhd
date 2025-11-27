@@ -87,7 +87,6 @@ architecture behavior of processador is
     signal pc_plus1           : unsigned(6 downto 0);
     signal branch_target_rel  : unsigned(6 downto 0);   
 
-    signal jjj : unsigned(2 downto 0);
     signal primos_out_int : unsigned(15 downto 0);
 
 begin
@@ -115,7 +114,6 @@ begin
           rom_data(11 downto 9 );
     
     sss <= rom_data(8 downto 6) when (opcode = "0110") else (others => '0');
-    jjj <= rom_data(8 downto 6) when opcode = "1111" else (others => '0');
     
     imediato      <= rom_data(7 downto 0);
     constante_sub <= rom_data(6 downto 0);
@@ -142,24 +140,20 @@ begin
                         (opcode = "1000" and bbb = "000") or
                         (opcode = "0101" and bbb = "000") or
                         (opcode = "0100" and bbb = "000") or
-                        (opcode = "0011" and bbb = "000") or
-                        (opcode = "1111" and jjj = "000")
+                        (opcode = "0011" and bbb = "000")
                     )) else '0';
 
     acc_b_wr_en <= '1' when (estado = "10" and (
                         (opcode = "1000" and bbb = "001") or
-                        (opcode = "0101" and bbb = "001") or
-                        (opcode = "1011")  -- grava em B no LW
+                        (opcode = "0101" and bbb = "001")
                     )) else '0';
 
     -- Mux de entrada dos acumuladores
     acc_a_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "000") else
                 ula_out    when (estado = "10" and bbb = "000" and (opcode = "0101" or opcode = "0100" or opcode = "0011")) else
-                acc_a + 1 when (estado = "10" and opcode = "1111" and jjj = "000") else
                 acc_a;
 
-    acc_b_in <= ram_dout when (estado = "10" and opcode = "1011") else
-                banco_out1 when (estado = "10" and opcode = "1000" and bbb = "001") else
+    acc_b_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "001") else
                 ula_out    when (estado = "10" and opcode = "0101" and bbb = "001") else
                 acc_b;
 
@@ -167,7 +161,6 @@ begin
     wr_en <= '1' when (estado = "10" and opcode = "0001") else -- LOAD
              '1' when (estado = "10" and opcode = "0010") else -- MOV R, A
              '1' when (estado = "10" and opcode = "1011") else -- LW
-             '1' when (estado = "10" and opcode = "1111") else -- INC
              '0';
 
     -- Seleção do dado de escrita para o banco de registradores
@@ -179,7 +172,6 @@ begin
 
     -- Seleção do endereço de escrita para o banco de registradores
     reg_wr_addr_int <= ddd when (estado = "10" and (opcode = "0001" or opcode = "0010" or opcode = "1011")) else 
-                       jjj when (estado = "10" and opcode = "1111") else
                        (others => '0');
 
     -- Seleção do endereço de leitura do banco de registradores
@@ -188,6 +180,8 @@ begin
                         (others => '0');
     reg_rd_addr2_int <= sss when (opcode = "0110") else
                         (others => '0');
+
+    primos_out_int <= ram_dout when (estado = "10" and opcode = "1011") else (others => '0');
 
     banco : entity work.registers
         port map (
@@ -297,9 +291,7 @@ begin
             dado_in  => ram_din,
             dado_out => ram_dout
         );
-    
-    -- guarda o valor lido da RAM para saída de primos
-    primos_out_int <= ram_dout when (estado = "10" and opcode = "1011") else (others => '0');
+        
 
 
 end architecture;
