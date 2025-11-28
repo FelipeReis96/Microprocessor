@@ -54,6 +54,7 @@ architecture behavior of processador is
     signal bbb : unsigned(2 downto 0);
     signal fff : unsigned(2 downto 0);
     signal ggg : unsigned(2 downto 0);
+    signal jjj : unsigned(2 downto 0);
     signal imediato : unsigned(7 downto 0); 
     signal constante_sub : unsigned(6 downto 0);
 
@@ -105,6 +106,7 @@ begin
     opcode    <= std_logic_vector(rom_data(18 downto 15)); 
     ddd       <= rom_data(14 downto 12);
     bbb       <= rom_data(8 downto 6);
+    jjj       <= rom_data(8 downto 6);
     aaa       <= rom_data(8 downto 6);
     ggg <= rom_data(9 downto 7) when opcode = "1010" else (others => '0');
     
@@ -117,7 +119,7 @@ begin
     
     imediato      <= rom_data(7 downto 0);
     constante_sub <= rom_data(6 downto 0);
-    addi_const    <= rom_data(5 downto 0);
+    addi_const    <= rom_data(5 downto 0) when opcode = "0011" else (others => '0');
 
     pc_plus1       <= pc_out + 1;
     branch_offset6 <= signed(rom_data(5 downto 0));
@@ -132,7 +134,8 @@ begin
                 (others => '0');
     ula_entrada2 <= banco_out1 when (opcode = "1000" or opcode = "0101") else
                     ("000000000" & constante_sub) when (opcode = "0100" or opcode = "1010") else
-                    ("0000000000" & addi_const) when opcode = "0011" else
+                    ("0000000000" & addi_const) when (opcode = "0011" ) else 
+                    ("0000000000000001") when (opcode = "1111" ) else  -- INC
                     (others => '0');
 
     -- Controle de escrita nos acumuladores
@@ -140,21 +143,24 @@ begin
                         (opcode = "1000" and bbb = "000") or
                         (opcode = "0101" and bbb = "000") or
                         (opcode = "0100" and bbb = "000") or
-                        (opcode = "0011" and bbb = "000")
+                        (opcode = "0011" and bbb = "000") or
+                        (opcode = "1111" and jjj = "000")  
                     )) else '0';
 
     acc_b_wr_en <= '1' when (estado = "10" and (
                         (opcode = "1000" and bbb = "001") or
-                        (opcode = "0101" and bbb = "001")
+                        (opcode = "0101" and bbb = "001") or
+                        (opcode = "1111" and jjj = "001")  
                     )) else '0';
 
     -- Mux de entrada dos acumuladores
     acc_a_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "000") else
-                ula_out    when (estado = "10" and bbb = "000" and (opcode = "0101" or opcode = "0100" or opcode = "0011")) else
+                ula_out    when (estado = "10" and bbb = "000" and (opcode = "0101" or opcode = "0100" or opcode = "0011" or opcode = "1111")) else 
                 acc_a;
 
     acc_b_in <= banco_out1 when (estado = "10" and opcode = "1000" and bbb = "001") else
                 ula_out    when (estado = "10" and opcode = "0101" and bbb = "001") else
+                ula_out    when (estado = "10" and opcode = "1111" and jjj = "001") else 
                 acc_b;
 
     -- Controle de escrita no banco de registradores
@@ -243,7 +249,7 @@ begin
     -- Decodificação de sss (fonte do dado para SW, usa rom_data direto)
     sss <= rom_data(8 downto 6) when (opcode = "0110") else (others => '0');
 
-    ula_operacao_int <= "00" when (opcode = "0101" or opcode = "0011") else 
+    ula_operacao_int <= "00" when (opcode = "0101" or opcode = "0011" or opcode = "1111") else 
                     "01" when (opcode = "0100" or opcode = "1010") else 
                     "10" when opcode = "0111" else 
                     "11" when opcode = "1001" else 
@@ -254,6 +260,7 @@ begin
     flags_wr_en <= '1' when (estado = "10" and 
                              (opcode = "0101" or -- ADD A,R
                               opcode = "0011" or -- ADDI A,const
+                              opcode = "1111" or -- INC A
                               opcode = "0100" or -- SUBI A,const
                               opcode = "1010" or -- CMPI A,const
                               opcode = "0111" or -- OR

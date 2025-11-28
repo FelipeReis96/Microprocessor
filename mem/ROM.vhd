@@ -21,12 +21,12 @@ architecture a_ROM of ROM is
 
          -- Incrementa R1: MOV A,R1; ADDI A,1; MOV R1,A
          3  => "1000000001000000000",  -- MOV  A, R1
-         4  => "0011000000000000001",  -- ADDI A, 1
+         4  => "1111000000000000001",  -- ADDI INC A
          5  => "0010001000000000000",  -- MOV  R1, A
 
          -- Incrementa R0: MOV A,R0; ADDI A,1; MOV R0,A
          6  => "1000000000000000000",  -- MOV  A, R0
-         7  => "0011000000000000001",  -- ADDI A, 1
+         7  => "1111000000000000001",  -- INC A
          8  => "0010000000000000000",  -- MOV  R0, A
 
          -- Compara R1 com 33: MOV A, R1; CMPI A, 33
